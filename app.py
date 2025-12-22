@@ -15,13 +15,26 @@ st.markdown("Clean, compact dashboard built using **Streamlit + Python**")
 st.markdown(
     """
     <style>
-    .stApp {
-        background-color: #F2F2F2;
+    /* Light mode */
+    @media (prefers-color-scheme: light) {
+        .stApp {
+            background-color: #F2F2F2;
+            color: #1F2937;
+        }
+    }
+
+    /* Dark mode */
+    @media (prefers-color-scheme: dark) {
+        .stApp {
+            background-color: #0E1117;
+            color: #FAFAFA;
+        }
     }
     </style>
     """,
     unsafe_allow_html=True
 )
+
 
 
 # ---------------- LOAD DATA ----------------
