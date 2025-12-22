@@ -34,7 +34,7 @@ st.markdown(
 )
 
 # ---------------- LOAD DATA ----------------
-df = pd.read_csv("india_covid_1year_vaccination_data.csv")
+df = pd.read_csv("india_covid_1year_vacination_sample_data.csv")
 df["date"] = pd.to_datetime(df["date"])
 
 # ---------------- DATA PREVIEW ----------------
@@ -88,7 +88,7 @@ st.subheader("💉 Deaths by Vaccination Status")
 
 fig3, ax3 = plt.subplots(figsize=(6, 3))
 
-ax3.plot(df["date"], df["deaths_unvaccinated"], label="Unvaccinated", color="#7C2D12")
+ax3.plot(df["date"], df["deaths_unvaccinated"], label="Unvaccinated", color="#7C23AB")
 ax3.plot(df["date"], df["deaths_after_1_dose"], label="1 Dose", color="#F59E0B")
 ax3.plot(df["date"], df["deaths_after_2_doses"], label="2 Doses", color="#16A34A")
 
