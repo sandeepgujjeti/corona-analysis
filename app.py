@@ -10,20 +10,18 @@ st.set_page_config(
 
 # ---------------- TITLE ----------------
 st.title("🇮🇳 COVID-19 Analysis Dashboard (India)")
-st.markdown("Clean, compact dashboard built using **Streamlit + Python**")
+st.markdown("1‑Year Analysis using **Streamlit + Python**")
 
+# ---------------- THEME‑AWARE BACKGROUND ----------------
 st.markdown(
     """
     <style>
-    /* Light mode */
     @media (prefers-color-scheme: light) {
         .stApp {
             background-color: #F2F2F2;
             color: #1F2937;
         }
     }
-
-    /* Dark mode */
     @media (prefers-color-scheme: dark) {
         .stApp {
             background-color: #0E1117;
@@ -35,28 +33,27 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
-
 # ---------------- LOAD DATA ----------------
-df = pd.read_csv("india_covid_sample_data.csv")
+df = pd.read_csv("india_covid_1year_vaccination_data.csv")
 df["date"] = pd.to_datetime(df["date"])
-
 
 # ---------------- DATA PREVIEW ----------------
 with st.expander("📄 Dataset Preview"):
-    st.dataframe(df.head())
+    st.dataframe(df, use_container_width=True)
 
 # ---------------- KPI METRICS ----------------
-total_cases = int(df["total_cases"].iloc[-1])
-total_deaths = int(df["total_deaths"].iloc[-1])
-peak_deaths = int(df["new_deaths"].max())
-peak_date = df.loc[df["new_deaths"].idxmax(), "date"].date()
+total_cases = int(df["confirmed_cases"].sum())
+total_deaths = int(df["total_deaths"].sum())
+total_recovered = int(df["recovered_cases"].sum())
+
+peak_deaths = int(df["total_deaths"].max())
+peak_date = df.loc[df["total_deaths"].idxmax(), "date"].date()
 
 col1, col2, col3, col4 = st.columns(4)
 col1.metric("Total Cases", f"{total_cases:,}")
 col2.metric("Total Deaths", f"{total_deaths:,}")
-col3.metric("Peak Daily Deaths", f"{peak_deaths:,}")
-col4.metric("Peak Death Date", str(peak_date))
+col3.metric("Recovered", f"{total_recovered:,}")
+col4.metric("Peak Death Month", str(peak_date))
 
 st.markdown("---")
 
@@ -65,64 +62,82 @@ def small_plot(figsize=(5, 3)):
     fig, ax = plt.subplots(figsize=figsize)
     return fig, ax
 
-# ---------------- ROW 1 ----------------
-st.subheader("📈 Daily Trends")
+# ---------------- ROW 1: MONTHLY CASES & DEATHS ----------------
+st.subheader("📈 Monthly Trends")
 
 col1, col2 = st.columns(2)
 
 with col1:
     fig1, ax1 = small_plot()
-    ax1.plot(df["date"], df["new_cases"], color="#1F77B4")
-    ax1.set_title("Daily New COVID-19 Cases", fontsize=10)
+    ax1.plot(df["date"], df["confirmed_cases"], color="#2563EB")
+    ax1.set_title("Monthly Confirmed Cases", fontsize=10)
     ax1.tick_params(axis="x", rotation=45, labelsize=8)
     ax1.tick_params(axis="y", labelsize=8)
     st.pyplot(fig1)
 
 with col2:
     fig2, ax2 = small_plot()
-    ax2.bar(df["date"], df["new_deaths"], color="#D62728")
-    ax2.set_title("Daily COVID-19 Deaths", fontsize=10)
+    ax2.bar(df["date"], df["total_deaths"], color="#DC2626")
+    ax2.set_title("Monthly Deaths", fontsize=10)
     ax2.tick_params(axis="x", rotation=45, labelsize=8)
     ax2.tick_params(axis="y", labelsize=8)
     st.pyplot(fig2)
 
-# ---------------- ROW 2 ----------------
-st.subheader("📊 Cumulative Impact")
+# ---------------- ROW 2: VACCINATION DEATH ANALYSIS ----------------
+st.subheader("💉 Deaths by Vaccination Status")
 
-col3, col4 = st.columns(2)
+fig3, ax3 = plt.subplots(figsize=(6, 3))
 
-with col3:
-    fig3, ax3 = small_plot()
-    ax3.fill_between(df["date"], df["total_cases"], alpha=0.6, color="#2CA02C")
-    ax3.set_title("Cumulative Total Cases", fontsize=10)
-    ax3.tick_params(axis="x", rotation=45, labelsize=8)
-    ax3.tick_params(axis="y", labelsize=8)
-    st.pyplot(fig3)
+ax3.plot(df["date"], df["deaths_unvaccinated"], label="Unvaccinated", color="#7C2D12")
+ax3.plot(df["date"], df["deaths_after_1_dose"], label="1 Dose", color="#F59E0B")
+ax3.plot(df["date"], df["deaths_after_2_doses"], label="2 Doses", color="#16A34A")
 
-with col4:
-    fig4, ax4 = small_plot()
-    ax4.plot(df["date"], df["total_deaths"], color="#7F7F7F")
-    ax4.set_title("Cumulative Total Deaths", fontsize=10)
-    ax4.tick_params(axis="x", rotation=45, labelsize=8)
-    ax4.tick_params(axis="y", labelsize=8)
-    st.pyplot(fig4)
+ax3.set_title("Deaths by Vaccination Status", fontsize=11)
+ax3.legend(fontsize=8)
+ax3.tick_params(axis="x", rotation=45, labelsize=8)
+ax3.tick_params(axis="y", labelsize=8)
 
-# ---------------- ROW 3 ----------------
-st.subheader("📉 Trend Analysis")
+st.pyplot(fig3)
 
-df["death_7day_avg"] = df["new_deaths"].rolling(window=7).mean()
+# ---------------- ROW 3: ALIVE POPULATION ----------------
+st.subheader("🧍 Alive Population by Vaccination Status")
 
-fig5, ax5 = plt.subplots(figsize=(6, 3))
-ax5.plot(df["date"], df["death_7day_avg"], color="#9467BD")
-ax5.set_title("7-Day Moving Average of Deaths", fontsize=11)
-ax5.tick_params(axis="x", rotation=45, labelsize=8)
-ax5.tick_params(axis="y", labelsize=8)
+fig4, ax4 = plt.subplots(figsize=(6, 3))
+
+ax4.stackplot(
+    df["date"],
+    df["alive_unvaccinated"],
+    df["alive_after_1_dose"],
+    df["alive_after_2_doses"],
+    labels=["Unvaccinated", "1 Dose", "2 Doses"],
+    colors=["#94A3B8", "#60A5FA", "#22C55E"]
+)
+
+ax4.legend(loc="upper left", fontsize=8)
+ax4.tick_params(axis="x", rotation=45, labelsize=8)
+ax4.tick_params(axis="y", labelsize=8)
+
+st.pyplot(fig4)
+
+# ---------------- ROW 4: SURVIVAL VS DEATH ----------------
+st.subheader("⚖ Survival vs Death Comparison")
+
+fig5, ax5 = plt.subplots(figsize=(5, 3))
+ax5.bar(
+    ["Recovered", "Deaths"],
+    [total_recovered, total_deaths],
+    color=["#16A34A", "#DC2626"]
+)
+ax5.set_ylabel("People Count")
 st.pyplot(fig5)
 
 # ---------------- INSIGHT ----------------
 st.success(
-    f"📌 Insight: Highest number of deaths ({peak_deaths}) occurred on {peak_date}"
+    f"📌 Insight: Highest deaths ({peak_deaths}) occurred around {peak_date}"
 )
 
 st.markdown("---")
+st.caption(
+    "Note: Vaccination analysis is based on aggregated / educational data."
+)
 st.markdown("👤 **Project by:** Gujjeti Sandeep")
